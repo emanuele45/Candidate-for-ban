@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!DOCTYPE package-info SYSTEM "http://www.simplemachines.org/xml/package-info">
+<package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
+	<id>emanuele:report_for_ban</id>
+	<name>Candidate for ban</name>
+	<version>0.1.0</version>
+	<type>modification</type>
+	<install for="2.0">
+		<modification>modification.xml</modification>
+		<modification>lang.xml</modification>
+		<modification>lang-UTF8.xml</modification>
+		<database>installScript.php</database>
+		<database>installHooks.php</database>
+		<require-file name="Subs-CandidateForBan.php" destination="$sourcedir" />
+		<require-file name="CandidateForBan.template.php" destination="$themedir" />
+		<redirect url="?action=admin;area=featuresettings;sa=sig" />
+	</install>
+	<uninstall for="2.0">
+		<modification reverse="true">modification.xml</modification>
+		<modification reverse="true">lang.xml</modification>
+		<modification reverse="true">lang-UTF8.xml</modification>
+		<database reverse="true">installScript.php</database>
+		<code>installHooks.php</code>
+		<remove-file name="$themedir/CandidateForBan.template.php" />
+		<remove-file name="$sourcedir/Subs-CandidateForBan.php" />
+	</uninstall>
+</package-info>

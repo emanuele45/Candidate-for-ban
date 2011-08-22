@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE modification SYSTEM "http://www.simplemachines.org/xml/modification">
+<modification xmlns="http://www.simplemachines.org/xml/modification" xmlns:smf="http://www.simplemachines.org/">
+
+	<id>emanuele:candidate_for_ban</id>
+	<version>0.1.0</version>
+
+	<file name="$sourcedir/Display.php">
+		<operation>
+			<search position="before"><![CDATA[
+		'can_report_moderator' => 'report_any',]]></search>
+			<add><![CDATA[
+		'can_candidate_for_ban' => 'report_for_ban',]]></add>
+		</operation>
+	</file>
+	<file name="$themedir/Display.template.php">
+		<operation>
+			<search position="after"><![CDATA[
+		// Maybe they want to report this post to the moderator(s)?
+]]></search>
+			<add><![CDATA[
+		// Maybe they want to candidate this user for a ban?
+		if ($context['can_candidate_for_ban'])
+			echo '
+						<a href="', $scripturl, '?action=profile;area=report_for_ban;u=', $message['member']['id'], '">', $txt['candidate_for_ban'], '</a> &nbsp;';
+]]></add>
+		</operation>
+	</file>
+</modification>
