@@ -1,6 +1,6 @@
 <?php
 
-function template_ReportForBan()
+function template_CandidateForBan()
 {
 	global $context, $settings, $options, $scripturl, $txt, $scripturl;
 
@@ -22,7 +22,7 @@ function template_ReportForBan()
 	if (!empty($context['already_reported']))
 	{
 		echo '
-		<div class="errorbox">
+		<div id="profile_success">
 			', implode('<br />', $context['already_reported']), '
 		</div>';
 	}
@@ -36,10 +36,10 @@ function template_ReportForBan()
 					<dl class="settings">
 						<dt', isset($context['reportforban_errors']['reason']) ? ' class="error"' : '', '>
 							<strong>', $txt['ban_reason'], ':</strong><br />
-							<span class="smalltext">', $txt['ban_reason_desc'], '</span>
+							<span class="smalltext">', $txt['prop_ban_reason_desc'], '</span>
 						</dt>
 						<dd>
-							<textarea name="reason" cols="50" rows="3">', $context['ban']['reason'], '</textarea>
+							<input type="text" maxlength="255" size="50" name="reason" ', !empty($context['ban']['reason']) ? 'value="' . $context['ban']['reason'] . '"' : '', ' />
 						</dd>
 					</dl>
 					<br class="clear_right" />';
@@ -60,9 +60,4 @@ function template_ReportForBan()
 
 }
 
-function template_ReportedBans ()
-{
-	echo "EE";
-
-}
 ?>

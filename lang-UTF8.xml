@@ -14,25 +14,28 @@ $txt['reportforban_this_user'] = 'Request to ban this user';
 $txt['reportforban_errors_reason'] = 'Please specify a reason for this ban';
 $txt['permissionname_report_for_ban'] = 'Allows candidate members for ban';
 $txt['report_for_ban_member_reported'] = 'for the following reason: %1$s';
-$txt['member_reported'] = 'Member already candidate for ban by: ';
+$txt['member_reported'] = 'Member already candidate for ban by ';
 $txt['proposed_bans'] = 'Proposed bans';
 $txt['reported_bans'] = 'Reported bans';
 $txt['reporter'] = 'Reporter';
-$txt['ban_by'] = 'Ban by';
-$txt['ban_time'] = 'Ban lenght';
+$txt['ban_by'] = 'triggers';
+$txt['ban_time'] = 'lenght';
+$txt['ban_reason'] = 'reason';
 $txt['ban_time_title'] = 'Empty or 0 for permanent';
 $txt['admin_ban_usernames'] = 'usernames';
 $txt['no_member_selected'] = 'No member selected';
-$txt['admin_ban_emails'] = 'email addresses';
+$txt['admin_ban_emails'] = 'emails';
 $txt['admin_ban_ips'] = 'IPs';
-$txt['admin_ban_usernames_and_emails'] = 'usernames and email addresses';
-$txt['admin_ban_usernames_and_ips'] = 'usernames and IP addresses';
-$txt['admin_ban_emails_and_ips'] = 'email and IP addresses';
-$txt['admin_ban_usernames_emails_and_ips'] = 'usernames, email and IP addresses';
-$txt['admin_ban_usernames_emails_and_ips'] = 'usernames, email and IP addresses';
+$txt['admin_ban_usernames_and_emails'] = 'usernames and emails';
+$txt['admin_ban_usernames_and_ips'] = 'usernames and IPs';
+$txt['admin_ban_emails_and_ips'] = 'emails and IPs';
+$txt['admin_ban_usernames_emails_and_ips'] = 'usernames, emails and IPs';
 $txt['remove_from_list'] = 'Remove reports';
 $txt['reportForBan_ban_name'] = 'Name of the ban list to be used bans reported by users';
 $txt['propban_no_entries'] = 'There are no candidates.';
+$txt['candidate_for_ban'] = 'Candidate for ban';
+$txt['prop_ban_reason_desc'] = 'Reason for ban, to be displayed to the admin.';
+$txt['ban_propban_description'] = 'Here you can review the bans reported by the members.';
 ]]></add>
 		</operation>
 	</file>

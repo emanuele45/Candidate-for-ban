@@ -38,7 +38,12 @@ $smcFunc['db_create_table'](
 			array(
 				array(
 					'name' => 'id_report',
-					'type' => 'reporting',
+					'type' => 'key',
+					'columns' => array('id_report'),
+				),
+				array(
+					'name' => 'reports',
+					'type' => 'unique',
 					'columns' => array('id_member', 'id_reporter', 'reason'),
 				),
 			)

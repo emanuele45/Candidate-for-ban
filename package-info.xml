@@ -13,7 +13,6 @@
 		<database>installHooks.php</database>
 		<require-file name="Subs-CandidateForBan.php" destination="$sourcedir" />
 		<require-file name="CandidateForBan.template.php" destination="$themedir" />
-		<redirect url="?action=admin;area=featuresettings;sa=sig" />
 	</install>
 	<uninstall for="2.0">
 		<modification reverse="true">modification.xml</modification>
