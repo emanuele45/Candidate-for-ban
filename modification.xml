@@ -3,7 +3,7 @@
 <modification xmlns="http://www.simplemachines.org/xml/modification" xmlns:smf="http://www.simplemachines.org/">
 
 	<id>emanuele:candidate_for_ban</id>
-	<version>0.1.0</version>
+	<version>0.1.1</version>
 
 	<file name="$sourcedir/Display.php">
 		<operation>

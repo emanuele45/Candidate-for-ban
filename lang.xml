@@ -3,7 +3,7 @@
 <modification xmlns="http://www.simplemachines.org/xml/modification" xmlns:smf="http://www.simplemachines.org/">
 
 	<id>emanuele:candidate_for_ban</id>
-	<version>0.1.0</version>
+	<version>0.1.1</version>
 
 	<file name="$languagedir/Modifications.english.php">
 		<operation>
@@ -19,7 +19,7 @@ $txt['proposed_bans'] = 'Proposed ban';
 $txt['reported_bans'] = 'Reported ban';
 $txt['reporter'] = 'Reporter';
 $txt['ban_by'] = 'triggers';
-$txt['ban_time'] = 'lenght';
+$txt['ban_time'] = 'length';
 $txt['ban_reason'] = 'reason';
 $txt['ban_time_title'] = 'Empty or 0 for permanent';
 $txt['admin_ban_usernames'] = 'usernames';
@@ -32,10 +32,13 @@ $txt['admin_ban_emails_and_ips'] = 'emails and IPs';
 $txt['admin_ban_usernames_emails_and_ips'] = 'usernames, emails and IPs';
 $txt['remove_from_list'] = 'Remove reports';
 $txt['reportForBan_ban_name'] = 'Ban name to be used for ban reported by members';
+$txt['reportForBan_display_single'] = 'Show reports aggregated by reported user';
 $txt['propban_no_entries'] = 'There are no candidates.';
 $txt['candidate_for_ban'] = 'Candidate for ban';
 $txt['prop_ban_reason_desc'] = 'Reason for ban, to be displayed to the admin.';
 $txt['ban_propban_description'] = 'Here you can review the ban reported by the members.';
+$txt['reportedBan_error_name'] = 'The ban name is missing.';
+$txt['reportedBan_error_reason'] = 'The ban reason is missing.';
 ]]></add>
 		</operation>
 	</file>

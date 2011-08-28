@@ -41,16 +41,24 @@ function candidateForBan_add_admin_menu (&$admin_areas)
 function candidateForBan_settings (&$config_vars) {
 	global $txt;
 	$config_vars[] = array('text', 'reportForBan_ban_name');
+	$config_vars[] = array('check', 'reportForBan_display_single');
 
 	if (isset($_GET['save']))
 	{
 		$_POST['reportForBan_ban_name'] = !empty($_POST['reportForBan_ban_name']) ? $_POST['reportForBan_ban_name'] : $txt['reported_bans'];
+		$_POST['reportForBan_display_single'] = empty($_POST['reportForBan_display_single']) ? 0 : 1;
 	}
 }
 
-/*
+/**
  *
  * End of hooks
+ *
+ */
+
+/**
+ *
+ * Reporting section
  *
  */
 
@@ -134,8 +142,6 @@ function candidateForBan2 ()
 	if(!empty($context['reportforban_errors']))
 		return candidateForBan();
 
-// 	$id = $smcFunc['db_insert_id']('{db_prefix}reported_for_ban', 'id_report');
-// 	_debug($id);
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}reported_for_ban',
 		array(
@@ -148,29 +154,57 @@ function candidateForBan2 ()
 	);
 }
 
+/**
+ *
+ * Admin section
+ *
+ */
+
 function list_getPropBans ($start, $items_per_page, $sort)
 {
-	global $smcFunc, $context;
+	global $smcFunc, $context, $modSettings;
 
-	$request = $smcFunc['db_query']('', '
-		SELECT rep.id_report, rep.id_member, rep.id_reporter, rep.reason, rep.added, mem.member_name, mem.real_name, mem.email_address, mem.member_ip, mem.member_ip2
-		FROM {db_prefix}reported_for_ban AS rep
-			LEFT JOIN {db_prefix}members AS mem ON (mem.id_member = rep.id_member)
-		ORDER BY {raw:sort}
-		LIMIT {int:offset}, {int:limit}',
-		array(
-			'sort' => $sort,
-			'offset' => $start,
-			'limit' => $items_per_page,
-		)
-	);
+	if(empty($modSettings['reportForBan_display_single']))
+		$request = $smcFunc['db_query']('', '
+			SELECT rep.id_report, rep.id_member, rep.id_reporter, rep.reason, rep.added, mem.member_name, mem.real_name, mem.email_address, mem.member_ip, mem.member_ip2
+			FROM {db_prefix}reported_for_ban AS rep
+				LEFT JOIN {db_prefix}members AS mem ON (mem.id_member = rep.id_member)
+			ORDER BY {raw:sort}
+			LIMIT {int:offset}, {int:limit}',
+			array(
+				'sort' => $sort,
+				'offset' => $start,
+				'limit' => $items_per_page,
+			)
+		);
+	else
+		$request = $smcFunc['db_query']('', '
+			SELECT rep.id_report, rep.id_member,
+				GROUP_CONCAT(rep.id_reporter SEPARATOR \',\') as id_reporter,
+				GROUP_CONCAT(rep.reason SEPARATOR \'<hr />\') as reason,
+				GROUP_CONCAT(rep.added SEPARATOR \',\') as added,
+				mem.member_name, mem.real_name, mem.email_address, mem.member_ip, mem.member_ip2
+			FROM {db_prefix}reported_for_ban AS rep
+				LEFT JOIN {db_prefix}members AS mem ON (mem.id_member = rep.id_member)
+			GROUP BY rep.id_member
+			ORDER BY {raw:sort}
+			LIMIT {int:offset}, {int:limit}',
+			array(
+				'sort' => $sort,
+				'offset' => $start,
+				'limit' => $items_per_page,
+			)
+		);
 
 	$bans = array();
 	$reporters = array();
 	while ($row = $smcFunc['db_fetch_assoc']($request))
 	{
 		$bans[] = $row;
-		$reporters[] = $row['id_reporter'];
+		if(empty($modSettings['reportForBan_display_single']))
+			$reporters[] = $row['id_reporter'];
+		else
+			$reporters += explode(',', $row['id_reporter']);
 	}
 
 	$smcFunc['db_free_result']($request);
@@ -199,7 +233,9 @@ function list_getNumPropBans ()
 
 	$request = $smcFunc['db_query']('', '
 		SELECT COUNT(*) AS num_prop_bans
-		FROM {db_prefix}reported_for_ban',
+		FROM {db_prefix}reported_for_ban' .
+		(empty($modSettings['reportForBan_display_single']) ? '' : '
+		GROUP BY id_member'),
 		array(
 		)
 	);
@@ -304,9 +340,19 @@ function ReportedBans ()
 				),
 				'data' => array(
 					'function' => create_function('$rowData', '
-						global $context, $scripturl;
+						global $context, $scripturl, $modSettings;
 
-						return \'<a href="\' . $scripturl . \'?action=profile;u=\' . $rowData[\'id_reporter\'] . \'">\' . $context[\'reporters\'][$rowData[\'id_reporter\']] . \'</a>\';
+						if(empty($modSettings[\'reportForBan_display_single\']))
+							return \'<a href="\' . $scripturl . \'?action=profile;u=\' . $rowData[\'id_reporter\'] . \'">\' . $context[\'reporters\'][$rowData[\'id_reporter\']] . \'</a>\';
+						else
+						{
+							$ret = \'\';
+							$reporters = explode(\',\', $rowData[\'id_reporter\']);
+							foreach($reporters as $key => $reporter)
+								$ret .= \'<a href="\' . $scripturl . \'?action=profile;u=\' . $reporter . \'">\' . $context[\'reporters\'][$reporter] . \'</a><hr />\';
+
+							return substr($ret, 0, -6);
+						}
 					'),
 				),
 				'sort' => array(
@@ -373,7 +419,7 @@ function ReportedBans ()
 				' . $txt['ban_name'] . '
 				<input type="text" size="15" maxlength="20" name="ban_name" value="' . (!empty($modSettings['reportForBan_ban_name']) ? $modSettings['reportForBan_ban_name'] : '') . '" class="input_text"/>
 				' . $txt['ban_reason'] . '
-				<input type="text" size="15" maxlength="20" name="ban_name" value="' . (!empty($modSettings['reportForBan_ban_name']) ? $modSettings['reportForBan_ban_name'] : '') . '" class="input_text"/>
+				<input type="text" size="15" maxlength="20" name="ban_reason" class="input_text"/>
 				' . $txt['ban_time'] . '
 				<input size="5" title="' . $txt['ban_time_title'] . '" type="text" name="ban_time" class="input_text"/>
 				' . $txt['ban_by'] . '
@@ -409,13 +455,12 @@ function ReportedBans2 ()
 
 	// Were are we supposed to put all these bans??
 	$ban_name = !empty($_POST['ban_name']) ? $smcFunc['htmlspecialchars']($_POST['ban_name'], ENT_QUOTES) : (!empty($modSettings['reportForBan_ban_name']) ? $modSettings['reportForBan_ban_name'] : $txt['reported_bans']);
+	$ban_reason = !empty($_POST['ban_reason']) ? $smcFunc['htmlspecialchars']($_POST['ban_reason'], ENT_QUOTES) : '';
 
 	if(empty($ban_name))
-		$context['ban_errors'][] = 'name';
-
-	if(!empty($context['ban_errors']) && $_POST['ban_type'] != 'remove_from_list')
-		return ReportedBans();
-
+		fatal_lang_error('reportedBan_error_name', false);
+	if(empty($ban_reason))
+		fatal_lang_error('reportedBan_error_reason', false);
 	if(empty($_POST['bans']))
 		fatal_lang_error('no_member_selected', false);
 
@@ -533,7 +578,7 @@ function ReportedBans2 ()
 			$_POST['expire_date'] = !empty($_POST['ban_time']) ? $_POST['ban_time'] : '';
 			$_POST['old_expire'] = 0;
 			$_POST['full_ban'] = empty($_POST['ban_time']);
-			$_POST['reason'] = $ban_name;
+			$_POST['reason'] = $ban_reason;
 			$_POST['ban_name'] = $ban_name;
 			$_POST['notes'] = '';
 
