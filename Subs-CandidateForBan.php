@@ -2,7 +2,7 @@
 if (!defined('SMF'))
 	die('Hacking attempt...');
 
-/*
+/**
  *
  * Hooks
  *
@@ -110,31 +110,8 @@ function candidateForBan ()
 		foreach ($member_reported as $rep)
 			$context['already_reported'][] = $txt['member_reported'] . '<a href="' . $scripturl . '?action=profile;u=' . $rep['id_reporter'] . '">' . $rep['real_name'] . '</a> ' . vsprintf($txt['report_for_ban_member_reported'], $rep['reason']);
 	}
-
-	if(empty($context['html_headers']))
-		$context['html_headers'] = '';
-
-	$context['html_headers'] .= '
-	<style type="text/css">
-		.ban_restriction
-		{
-			margin: 0.2em 0 0.2em 2.2em;
-		}
-		.ban_settings
-		{
-			width: 46%;
-		}
-		#manage_bans dl
-		{
-			margin-bottom: 1em;
-		}
-		#manage_bans fieldset dl.settings
-		{
-			margin-bottom: 0;
-		}
-	</style>';
-
 }
+
 function candidateForBan2 ()
 {
 	global $context, $smcFunc, $user_info;
