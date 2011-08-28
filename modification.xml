@@ -5,33 +5,12 @@
 	<id>emanuele:candidate_for_ban</id>
 	<version>0.1.1</version>
 
-	<file name="$sourcedir/Display.php">
-		<operation>
-			<search position="before"><![CDATA[
-		'can_report_moderator' => 'report_any',]]></search>
-			<add><![CDATA[
-		'can_candidate_for_ban' => 'report_for_ban',]]></add>
-		</operation>
-	</file>
 	<file name="$sourcedir/ManageBans.php">
 		<operation>
 			<search position="before"><![CDATA[
 		'log' => 'BanLog',]]></search>
 			<add><![CDATA[
 		'propban' => 'ReportedBans',]]></add>
-		</operation>
-		<operation>
-			<search position="replace"><![CDATA[
-				'is_last' => true,
-			),]]></search>
-			<add><![CDATA[
-			),
-			'propban' => array(
-				'description' => $txt['ban_propban_description'],
-				'href' => $scripturl . '?action=admin;area=ban;sa=propban',
-				'is_selected' => $_REQUEST['sa'] == 'propban',
-				'is_last' => true,
-			),]]></add>
 		</operation>
 	</file>
 

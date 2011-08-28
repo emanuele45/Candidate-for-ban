@@ -15,6 +15,12 @@ function candidateForBan_add_permissions (&$permissionGroups, &$permissionList, 
 	$context['non_guest_permissions'][] = 'report_for_ban';
 }
 
+function candidateForBan_common_permissions ()
+{
+	global $context;
+	$context['can_candidate_for_ban'] = allowedTo('report_for_ban');
+}
+
 function candidateForBan_add_profile_menu (&$profile_areas)
 {
 	global $txt, $context;
@@ -248,6 +254,13 @@ function list_getNumPropBans ()
 function ReportedBans ()
 {
 	global $context, $sourcedir, $scripturl, $txt, $modSettings;
+
+	$context[$context['admin_menu_name']]['tab_data']['tabs']['propban'] = array(
+				'description' => $txt['ban_propban_description'],
+				'href' => $scripturl . '?action=admin;area=ban;sa=propban',
+				'is_selected' => $_REQUEST['sa'] == 'propban',
+				'is_last' => true,
+			);
 
 	if(isset($_POST['add_to_ban']) && empty($context['ban_errors']))
 		ReportedBans2();
