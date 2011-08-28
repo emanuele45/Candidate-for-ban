@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE package-info SYSTEM "http://www.simplemachines.org/xml/package-info">
 <package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
-	<id>emanuele:report_for_ban</id>
+	<id>emanuele:candidate_for_ban</id>
 	<name>Candidate for ban</name>
 	<version>0.1.1</version>
 	<type>modification</type>
