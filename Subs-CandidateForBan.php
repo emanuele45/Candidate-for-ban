@@ -18,6 +18,7 @@ function candidateForBan_add_permissions (&$permissionGroups, &$permissionList, 
 function candidateForBan_common_permissions ()
 {
 	global $context;
+
 	$context['can_candidate_for_ban'] = allowedTo('report_for_ban');
 }
 
@@ -89,9 +90,9 @@ function candidateForBan ()
 		array(
 			'id_member' => $context['id_member'],
 	));
-	if($smcFunc['db_num_rows']($request) > 0)
-		while($row = $smcFunc['db_fetch_assoc']($request))
-			$member_reported[] = $row;
+
+	while($row = $smcFunc['db_fetch_assoc']($request))
+		$member_reported[] = $row;
 
 	$smcFunc['db_free_result']($request);
 
@@ -125,6 +126,13 @@ function candidateForBan2 ()
 	if(!empty($context['reportforban_errors']))
 		return candidateForBan();
 
+	$propReason = cache_get_data('proposed_ban_reason_' . $user_info['id']);
+	
+	if (!empty($propReason))
+		fatal_lang_error('reportedBan_flood_report', false);
+	elseif (!empty($propReason) && $propReason == $smcFunc['htmlspecialchars']($_POST['reason'], ENT_QUOTES))
+		fatal_lang_error('reportedBan_duplicate_report', false);
+
 	$smcFunc['db_insert']('insert',
 		'{db_prefix}reported_for_ban',
 		array(
@@ -135,6 +143,7 @@ function candidateForBan2 ()
 		),
 		array('id_report')
 	);
+	cache_put_data('proposed_ban_reason_' . $user_info['id'], $smcFunc['htmlspecialchars']($_POST['reason'], ENT_QUOTES), 60*60);
 }
 
 /**
@@ -146,6 +155,9 @@ function candidateForBan2 ()
 function list_getPropBans ($start, $items_per_page, $sort)
 {
 	global $smcFunc, $context, $modSettings;
+
+	$bans = array();
+	$reporters = array();
 
 	if(empty($modSettings['reportForBan_display_single']))
 		$request = $smcFunc['db_query']('', '
@@ -161,26 +173,105 @@ function list_getPropBans ($start, $items_per_page, $sort)
 			)
 		);
 	else
-		$request = $smcFunc['db_query']('', '
-			SELECT rep.id_report, rep.id_member,
-				GROUP_CONCAT(rep.id_reporter SEPARATOR \',\') as id_reporter,
-				GROUP_CONCAT(rep.reason SEPARATOR \'<hr />\') as reason,
-				GROUP_CONCAT(rep.added SEPARATOR \',\') as added,
-				mem.member_name, mem.real_name, mem.email_address, mem.member_ip, mem.member_ip2
-			FROM {db_prefix}reported_for_ban AS rep
-				LEFT JOIN {db_prefix}members AS mem ON (mem.id_member = rep.id_member)
-			GROUP BY rep.id_member
-			ORDER BY {raw:sort}
-			LIMIT {int:offset}, {int:limit}',
-			array(
-				'sort' => $sort,
-				'offset' => $start,
-				'limit' => $items_per_page,
-			)
-		);
+	{
+		if ($smcFunc['db_title'] != 'MySQL')
+		{
+			$request = $smcFunc['db_query']('', '
+				SELECT rep.id_report, rep.id_member as id_member,
+					rep.id_reporter,
+					rep.reason,
+					rep.added,
+					mem.member_name, mem.real_name, mem.email_address, mem.member_ip, mem.member_ip2
+				FROM {db_prefix}reported_for_ban AS rep
+					LEFT JOIN {db_prefix}members AS mem ON (mem.id_member = rep.id_member)
+				GROUP BY rep.id_report, rep.id_member,
+					rep.id_reporter,
+					rep.reason,
+					rep.added,
+					mem.member_name, mem.real_name, mem.email_address, mem.member_ip, mem.member_ip2
+				ORDER BY {raw:sort}
+				LIMIT {int:offset}, {int:limit}',
+				array(
+					'sort' => $sort,
+					'offset' => $start,
+					'limit' => $items_per_page,
+				)
+			);
+			$members_rep = array();
+			while ($row = $smcFunc['db_fetch_assoc']($request))
+				$members_rep[] = $row['id_member'];
+			$smcFunc['db_free_result']($request);
 
-	$bans = array();
-	$reporters = array();
+			if(empty($members_rep))
+				return $bans;
+
+			$request = $smcFunc['db_query']('', '
+				SELECT rep.id_report, rep.id_member,
+					rep.id_reporter,
+					rep.reason,
+					rep.added,
+					mem.member_name, mem.real_name, mem.email_address, mem.member_ip, mem.member_ip2
+				FROM {db_prefix}reported_for_ban AS rep
+					LEFT JOIN {db_prefix}members AS mem ON (mem.id_member = rep.id_member)
+				WHERE rep.id_member IN ({array_int:members})
+				ORDER BY {raw:sort}',
+				array(
+					'sort' => $sort,
+					'offset' => $start,
+					'members' => $members_rep,
+				)
+			);
+			$rows= array();
+			while ($row = $smcFunc['db_fetch_assoc']($request))
+			{
+				$rows[$row['id_member']]['id_report'] = $row['id_report'];
+				$rows[$row['id_member']]['id_member'] = $row['id_member'];
+				if (!isset($rows[$row['id_member']]['id_reporter']))
+					$rows[$row['id_member']]['id_reporter'] = $row['id_reporter'];
+				else
+					$rows[$row['id_member']]['id_reporter'] .= ',' . $row['id_reporter'];
+				if (!isset($rows[$row['id_member']]['reason']))
+					$rows[$row['id_member']]['reason'] = $row['reason'];
+				else
+					$rows[$row['id_member']]['reason'] .= '<hr />' . $row['reason'];
+				if (!isset($rows[$row['id_member']]['added']))
+					$rows[$row['id_member']]['added'] = $row['added'];
+				else
+					$rows[$row['id_member']]['added'] .= ',' . $row['added'];
+				$rows[$row['id_member']]['member_name'] = $row['member_name'];
+				$rows[$row['id_member']]['real_name'] = $row['real_name'];
+				$rows[$row['id_member']]['email_address'] = $row['email_address'];
+				$rows[$row['id_member']]['member_ip'] = $row['member_ip'];
+				$rows[$row['id_member']]['member_ip2'] = $row['member_ip2'];
+			}
+			foreach ($rows as $row)
+			{
+				$bans[] = $row;
+				$reporters += explode(',', $row['id_reporter']);
+			}
+			candidateForBan_getReporters($reporters);
+			return $bans;
+		}
+		else
+			$request = $smcFunc['db_query']('', '
+				SELECT rep.id_report, rep.id_member,
+					GROUP_CONCAT(rep.id_reporter SEPARATOR \',\') as id_reporter,
+					GROUP_CONCAT(rep.reason SEPARATOR \'<hr />\') as reason,
+					GROUP_CONCAT(rep.added SEPARATOR \',\') as added,
+					mem.member_name, mem.real_name, mem.email_address, mem.member_ip, mem.member_ip2
+				FROM {db_prefix}reported_for_ban AS rep
+					LEFT JOIN {db_prefix}members AS mem ON (mem.id_member = rep.id_member)
+				GROUP BY rep.id_member
+				ORDER BY {raw:sort}
+				LIMIT {int:offset}, {int:limit}',
+				array(
+					'sort' => $sort,
+					'offset' => $start,
+					'limit' => $items_per_page,
+				)
+			);
+	}
+
 	while ($row = $smcFunc['db_fetch_assoc']($request))
 	{
 		$bans[] = $row;
@@ -191,6 +282,14 @@ function list_getPropBans ($start, $items_per_page, $sort)
 	}
 
 	$smcFunc['db_free_result']($request);
+
+	candidateForBan_getReporters($reporters);
+	return $bans;
+}
+
+function candidateForBan_getReporters ($reporters)
+{
+	global $smcFunc, $context;
 
 	if(!empty($reporters))
 	{
@@ -207,7 +306,6 @@ function list_getPropBans ($start, $items_per_page, $sort)
 			$context['reporters'][$row['id_member']] = $row['real_name'];
 		$smcFunc['db_free_result']($request);
 	}
-	return $bans;
 }
 
 function list_getNumPropBans ()
@@ -333,13 +431,17 @@ function ReportedBans ()
 						global $context, $scripturl, $modSettings;
 
 						if(empty($modSettings[\'reportForBan_display_single\']))
-							return \'<a href="\' . $scripturl . \'?action=profile;u=\' . $rowData[\'id_reporter\'] . \'">\' . $context[\'reporters\'][$rowData[\'id_reporter\']] . \'</a>\';
+						{
+							if (!empty($context[\'reporters\'][$rowData[\'id_reporter\']]))
+								return \'<a href="\' . $scripturl . \'?action=profile;u=\' . $rowData[\'id_reporter\'] . \'">\' . $context[\'reporters\'][$rowData[\'id_reporter\']] . \'</a>\';
+						}
 						else
 						{
 							$ret = \'\';
 							$reporters = explode(\',\', $rowData[\'id_reporter\']);
 							foreach($reporters as $key => $reporter)
-								$ret .= \'<a href="\' . $scripturl . \'?action=profile;u=\' . $reporter . \'">\' . $context[\'reporters\'][$reporter] . \'</a><hr />\';
+								if(!empty($context[\'reporters\'][$reporter]))
+									$ret .= \'<a href="\' . $scripturl . \'?action=profile;u=\' . $reporter . \'">\' . $context[\'reporters\'][$reporter] . \'</a><hr />\';
 
 							return substr($ret, 0, -6);
 						}
@@ -447,6 +549,44 @@ function ReportedBans2 ()
 	$ban_name = !empty($_POST['ban_name']) ? $smcFunc['htmlspecialchars']($_POST['ban_name'], ENT_QUOTES) : (!empty($modSettings['reportForBan_ban_name']) ? $modSettings['reportForBan_ban_name'] : $txt['reported_bans']);
 	$ban_reason = !empty($_POST['ban_reason']) ? $smcFunc['htmlspecialchars']($_POST['ban_reason'], ENT_QUOTES) : '';
 
+	$remove = false;
+	switch ($_POST['ban_type'])
+	{
+		case 'ban_names':
+			$mactions = array('ban_names');
+			break;
+		case 'ban_emails':
+			$mactions = array('ban_mails');
+			break;
+		case 'ban_ips':
+			$mactions = array('ban_ips', 'ban_ips2');
+			break;
+		case 'ban_names_emails':
+			$mactions = array('ban_names', 'ban_mails');
+			break;
+		case 'ban_names_ips':
+			$mactions = array('ban_names', 'ban_ips', 'ban_ips2');
+			break;
+		case 'ban_emails_ips':
+			$mactions = array('ban_mails', 'ban_ips', 'ban_ips2');
+			break;
+		case 'ban_names_emails_ips':
+			$mactions = array('ban_names', 'ban_mails', 'ban_ips', 'ban_ips2');
+			break;
+		case 'remove_from_list':
+			$remove = true;
+			break;
+		default:
+			$mactions = null;
+			break;
+	}
+
+	if($remove)
+	{
+		candidatForBan_removeSuggestions();
+		return;
+	}
+
 	if(empty($ban_name))
 		fatal_lang_error('reportedBan_error_name', false);
 	if(empty($ban_reason))
@@ -490,37 +630,8 @@ function ReportedBans2 ()
 			// Don't ban yourself, idiot.
 			$members[] = (int) $value;
 
-	$remove = false;
-	switch ($_POST['ban_type'])
-	{
-		case 'ban_names':
-			$mactions = array('ban_names');
-			break;
-		case 'ban_emails':
-			$mactions = array('ban_mails');
-			break;
-		case 'ban_ips':
-			$mactions = array('ban_ips', 'ban_ips2');
-			break;
-		case 'ban_names_emails':
-			$mactions = array('ban_names', 'ban_mails');
-			break;
-		case 'ban_names_ips':
-			$mactions = array('ban_names', 'ban_ips', 'ban_ips2');
-			break;
-		case 'ban_emails_ips':
-			$mactions = array('ban_mails', 'ban_ips', 'ban_ips2');
-			break;
-		case 'ban_names_emails_ips':
-			$mactions = array('ban_names', 'ban_mails', 'ban_ips', 'ban_ips2');
-			break;
-		case 'remove_from_list':
-			$remove = true;
-			break;
-		default:
-			$mactions = null;
-			break;
-	}
+	if (empty($members))
+		return;
 
 	if(!empty($mactions))
 		foreach ($mactions as $maction)
@@ -610,18 +721,25 @@ function ReportedBans2 ()
 	//Cleanup the reports
 	if($remove)
 	{
-		$to_remove = array();
-		foreach($_POST['bans'] as $key => $val)
-			$to_remove[] = $key;
-
-		$smcFunc['db_query']('', '
-			DELETE FROM {db_prefix}reported_for_ban
-			WHERE id_report IN ({array_int:id_report})',
-			array(
-				'id_report' => $to_remove,
-		));
+		candidatForBan_removeSuggestions();
 	}
 	
+}
+
+function candidatForBan_removeSuggestions()
+{
+	global $smcFunc;
+
+	$to_remove = array();
+	foreach($_POST['bans'] as $key => $val)
+		$to_remove[] = $key;
+
+	$smcFunc['db_query']('', '
+		DELETE FROM {db_prefix}reported_for_ban
+		WHERE id_report IN ({array_int:id_report})',
+		array(
+			'id_report' => $to_remove,
+	));
 }
 
 function candidateForBan_checkExistingTriggerIP($ip_array, $fullip = '')

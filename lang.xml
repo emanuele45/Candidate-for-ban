@@ -39,6 +39,8 @@ $txt['prop_ban_reason_desc'] = 'Reason for ban, to be displayed to the admin.';
 $txt['ban_propban_description'] = 'Here you can review the ban reported by the members.';
 $txt['reportedBan_error_name'] = 'The ban name is missing.';
 $txt['reportedBan_error_reason'] = 'The ban reason is missing.';
+$txt['reportedBan_flood_report'] = 'You have already reported this user in the last hour.';
+$txt['reportedBan_duplicate_report'] = 'You have already reported this user for this reason.';
 ]]></add>
 		</operation>
 	</file>

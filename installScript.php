@@ -6,6 +6,18 @@ elseif (!defined('SMF')) // If we are outside SMF and can't find SSI.php, then t
 	die('<b>Error:</b> Cannot install - please verify you put this file in the same place as SMF\'s SSI.php.');
 
 db_extend('packages');
+
+if ($smcFunc['db_title'] == 'PostgreSQL')
+	$smcFunc['db_query']('', '
+		CREATE AGGREGATE array_agg (anyelement)
+		(
+				sfunc = array_append,
+				stype = anyarray,
+				initcond = \'\'
+		)',
+		array()
+	);
+
 $smcFunc['db_create_table'](
 			'{db_prefix}reported_for_ban', 
 			array(
@@ -16,12 +28,12 @@ $smcFunc['db_create_table'](
 					),
 				array(
 							'name' => 'id_member',
-							'type' => 'MEDIUMINT',
+							'type' => 'mediumint',
 							'default' => 0
 					),
 				array(
 							'name' => 'id_reporter',
-							'type' => 'TINYINT',
+							'type' => 'tinyint',
 							'default' => 0
 					),
 				array(
@@ -38,7 +50,7 @@ $smcFunc['db_create_table'](
 			array(
 				array(
 					'name' => 'id_report',
-					'type' => 'key',
+					'type' => 'primary',
 					'columns' => array('id_report'),
 				),
 				array(

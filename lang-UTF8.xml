@@ -5,7 +5,7 @@
 	<id>emanuele:candidate_for_ban</id>
 	<version>0.1.1</version>
 
-	<file name="$languagedir/Modifications.english.php">
+	<file name="$languagedir/Modifications.english-utf8.php" error="skip">
 		<operation>
 			<search position="end" />
 			<add><![CDATA[
@@ -39,6 +39,8 @@ $txt['prop_ban_reason_desc'] = 'Reason for ban, to be displayed to the admin.';
 $txt['ban_propban_description'] = 'Here you can review the ban reported by the members.';
 $txt['reportedBan_error_name'] = 'The ban name is missing.';
 $txt['reportedBan_error_reason'] = 'The ban reason is missing.';
+$txt['reportedBan_flood_report'] = 'You have already reported this user in the last hour.';
+$txt['reportedBan_duplicate_report'] = 'You have already reported this user for this reason.';
 ]]></add>
 		</operation>
 	</file>
