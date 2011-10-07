@@ -14,14 +14,14 @@
 		</operation>
 	</file>
 
-	<file name="$themedir/Display.template.php">
+	<file name="$themedir/Display.template.php" error="skip">
 		<operation>
 			<search position="after"><![CDATA[
 		// Maybe they want to report this post to the moderator(s)?
 ]]></search>
 			<add><![CDATA[
 		// Maybe they want to candidate this user for a ban?
-		if ($context['can_candidate_for_ban'])
+		if (!empty($context['can_candidate_for_ban']))
 			echo '
 						<a href="', $scripturl, '?action=profile;area=report_for_ban;u=', $message['member']['id'], '">', $txt['candidate_for_ban'], '</a> &nbsp;';
 ]]></add>

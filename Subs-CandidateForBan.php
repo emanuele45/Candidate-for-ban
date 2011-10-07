@@ -26,6 +26,8 @@ function candidateForBan_add_profile_menu (&$profile_areas)
 {
 	global $txt, $context;
 
+	loadLanguage('CandidateForBan');
+
 	$profile_areas['profile_action']['areas']['report_for_ban'] = array(
 		'label' => $txt['report_for_ban'],
 		'file' => 'Subs-CandidateForBan.php',
@@ -42,11 +44,16 @@ function candidateForBan_add_admin_menu (&$admin_areas)
 {
 	global $txt;
 
+	loadLanguage('CandidateForBan');
+
 	$admin_areas['members']['areas']['ban']['subsections']['propban'] = array($txt['proposed_bans']);
 }
 
 function candidateForBan_settings (&$config_vars) {
 	global $txt;
+
+	loadLanguage('CandidateForBan');
+
 	$config_vars[] = array('text', 'reportForBan_ban_name');
 	$config_vars[] = array('check', 'reportForBan_display_single');
 
@@ -76,6 +83,7 @@ function candidateForBan ()
 	isAllowedTo('report_for_ban');
 	loadTemplate('CandidateForBan');
 	loadLanguage('Admin');
+	loadLanguage('CandidateForBan');
 
 	if (isset($_REQUEST['request_ban']) && empty($context['reportforban_errors']))
 		candidateForBan2();
@@ -155,6 +163,8 @@ function candidateForBan2 ()
 function list_getPropBans ($start, $items_per_page, $sort)
 {
 	global $smcFunc, $context, $modSettings;
+
+	loadLanguage('CandidateForBan');
 
 	$bans = array();
 	$reporters = array();
@@ -329,6 +339,8 @@ function list_getNumPropBans ()
 function ReportedBans ()
 {
 	global $context, $sourcedir, $scripturl, $txt, $modSettings;
+
+	loadLanguage('CandidateForBan');
 
 	$context[$context['admin_menu_name']]['tab_data']['tabs']['propban'] = array(
 				'description' => $txt['ban_propban_description'],
@@ -543,6 +555,8 @@ function ReportedBans2 ()
 	global $modSettings, $smcFunc, $txt, $sourcedir, $user_info;
 	checkSession('post');
 
+	loadLanguage('CandidateForBan');
+
 	$context['ban_errors'] = array();
 
 	// Were are we supposed to put all these bans??
@@ -687,8 +701,7 @@ function ReportedBans2 ()
 			{
 				if ($checkIPs)
 				{
-					$ip_parts = ip2range($row[$what]);
-					if (candidateForBan_checkExistingTriggerIP($ip_parts, $row[$what]))
+					if (!candidateForBan_checkExistingTriggerIP($row[$what]))
 						continue;
 
 					$_POST['ip'] = $row[$what];
@@ -742,12 +755,41 @@ function candidatForBan_removeSuggestions()
 	));
 }
 
-function candidateForBan_checkExistingTriggerIP($ip_array, $fullip = '')
+function candidateForBan_checkExistingTriggerIP($fullip = '')
 {
 	global $smcFunc, $user_info;
 
-	if (count($ip_array) == 4)
-		$values = array(
+	if (empty($fullip))
+		return false;
+
+	$ip_v6_mod = function_exists('ip2range_ipv6');
+
+	$ip_func = $ip_v6_mod ? 'ip2range_ipv6' : 'ip2range'
+	$ip_array = $ip_func();
+
+	if (count($ip_array) == 4 || count($ip_array) == 8)
+	{
+		if ($ip_v6_mod)
+			$values = array(
+			'ip_low1' => $ip_array[0]['low'],
+			'ip_high1' => $ip_array[0]['high'],
+			'ip_low2' => $ip_array[1]['low'],
+			'ip_high2' => $ip_array[1]['high'],
+			'ip_low3' => $ip_array[2]['low'],
+			'ip_high3' => $ip_array[2]['high'],
+			'ip_low4' => $ip_array[3]['low'],
+			'ip_high4' => $ip_array[3]['high'],
+			'ip_low5' => $ip_array[4]['low'],
+			'ip_high5' => $ip_array[4]['high'],
+			'ip_low6' => $ip_array[5]['low'],
+			'ip_high6' => $ip_array[5]['high'],
+			'ip_low7' => $ip_array[6]['low'],
+			'ip_high7' => $ip_array[6]['high'],
+			'ip_low8' => $ip_array[7]['low'],
+			'ip_high8' => $ip_array[7]['high'],
+			);
+		else
+			$values = array(
 			'ip_low1' => $ip_array[0]['low'],
 			'ip_high1' => $ip_array[0]['high'],
 			'ip_low2' => $ip_array[1]['low'],
@@ -757,12 +799,13 @@ function candidateForBan_checkExistingTriggerIP($ip_array, $fullip = '')
 			'ip_low4' => $ip_array[3]['low'],
 			'ip_high4' => $ip_array[3]['high'],
 		);
+	}
 	else
-		return true;
+		return false;
 
 	// Again...don't ban yourself!!
 	if (!empty($fullip) && ($user_info['ip'] == $fullip || $user_info['ip2'] == $fullip))
-		return true;
+		return false;
 
 	$request = $smcFunc['db_query']('', '
 		SELECT bg.id_ban_group, bg.name
@@ -772,14 +815,18 @@ function candidateForBan_checkExistingTriggerIP($ip_array, $fullip = '')
 			AND ip_low1 = {int:ip_low1} AND ip_high1 = {int:ip_high1}
 			AND ip_low2 = {int:ip_low2} AND ip_high2 = {int:ip_high2}
 			AND ip_low3 = {int:ip_low3} AND ip_high3 = {int:ip_high3}
-			AND ip_low4 = {int:ip_low4} AND ip_high4 = {int:ip_high4}
+			AND ip_low4 = {int:ip_low4} AND ip_high4 = {int:ip_high4}' . ($ip_v6_mod ? '
+			AND ip_low5 = {int:ip_low5} AND ip_high1 = {int:ip_high5}
+			AND ip_low6 = {int:ip_low6} AND ip_high2 = {int:ip_high6}
+			AND ip_low7 = {int:ip_low7} AND ip_high3 = {int:ip_high7}
+			AND ip_low8 = {int:ip_low8} AND ip_high4 = {int:ip_high8}' : '') . '
 		LIMIT 1',
 		$values
 	);
 	if ($smcFunc['db_num_rows']($request) != 0)
-		$ret = true;
-	else
 		$ret = false;
+	else
+		$ret = true;
 	$smcFunc['db_free_result']($request);
 
 	return $ret;

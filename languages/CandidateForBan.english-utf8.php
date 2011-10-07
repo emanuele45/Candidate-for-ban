@@ -1,14 +1,5 @@
-<?xml version="1.0"?>
-<!DOCTYPE modification SYSTEM "http://www.simplemachines.org/xml/modification">
-<modification xmlns="http://www.simplemachines.org/xml/modification" xmlns:smf="http://www.simplemachines.org/">
+<?php
 
-	<id>emanuele:candidate_for_ban</id>
-	<version>0.1.1</version>
-
-	<file name="$languagedir/Modifications.english.php">
-		<operation>
-			<search position="end" />
-			<add><![CDATA[
 $txt['report_for_ban'] = 'Candidate for ban';
 $txt['reportforban_this_user'] = 'Request to ban this user';
 $txt['reportforban_errors_reason'] = 'Please specify a reason for this ban';
@@ -41,7 +32,5 @@ $txt['reportedBan_error_name'] = 'The ban name is missing.';
 $txt['reportedBan_error_reason'] = 'The ban reason is missing.';
 $txt['reportedBan_flood_report'] = 'You have already reported this user in the last hour.';
 $txt['reportedBan_duplicate_report'] = 'You have already reported this user for this reason.';
-]]></add>
-		</operation>
-	</file>
-</modification>
+
+?>
