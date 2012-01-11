@@ -4,7 +4,18 @@
 
 	<id>emanuele:candidate_for_ban</id>
 	<version>0.1.1</version>
-
+	<license><!--
+/**
+ * Candidate for ban (CFB)
+ *
+ * @package CFB
+ * @author emanuele
+ * @copyright 2011 emanuele, Simple Machines
+ * @license http://www.simplemachines.org/about/smf/license.php BSD
+ *
+ * @version 0.1.1
+ */
+--></license>
 	<file name="$sourcedir/ManageBans.php">
 		<operation>
 			<search position="before"><![CDATA[

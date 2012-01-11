@@ -4,23 +4,40 @@
 	<id>emanuele:candidate_for_ban</id>
 	<name>Candidate for ban</name>
 	<version>0.1.1</version>
+	<license><!--
+/**
+ * Candidate for ban (CFB)
+ *
+ * @package CFB
+ * @author emanuele
+ * @copyright 2011 emanuele, Simple Machines
+ * @license http://www.simplemachines.org/about/smf/license.php BSD
+ *
+ * @version 0.1.1
+ */
+--></license>
 	<type>modification</type>
-	<install for="2.0">
+	<install for="2.0 - 2.0.99">
 		<modification>modification.xml</modification>
+		<modification>languages/lang.xml</modification>
+		<modification>languages/lang-utf8.xml</modification>
 		<database>installScript.php</database>
 		<database>installHooks.php</database>
 		<require-file name="Subs-CandidateForBan.php" destination="$sourcedir" />
 		<require-file name="CandidateForBan.template.php" destination="$themedir" />
 		<require-file name="languages/CandidateForBan.english.php" destination="$languagedir" />
 		<require-file name="languages/CandidateForBan.english-utf8.php" destination="$languagedir" />
+		<redirect url="?action=admin;area=modsettings;sa=general" />
 	</install>
-	<uninstall for="2.0">
+	<uninstall for="2.0 - 2.0.99">
 		<modification reverse="true">modification.xml</modification>
-		<database reverse="true">installScript.php</database>
+		<modification reverse="true">languages/lang.xml</modification>
+		<modification reverse="true">languages/lang-utf8.xml</modification>
 		<code>installHooks.php</code>
 		<remove-file name="$themedir/CandidateForBan.template.php" />
 		<remove-file name="$sourcedir/Subs-CandidateForBan.php" />
 		<remove-file name="$languagedir/CandidateForBan.english.php" />
 		<remove-file name="$languagedir/CandidateForBan.english-utf8.php" />
+		<redirect url="?action=admin;area=packages" />
 	</uninstall>
 </package-info>

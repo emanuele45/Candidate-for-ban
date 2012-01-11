@@ -1,4 +1,14 @@
 <?php
+/**
+ * Candidate for ban (CFB)
+ *
+ * @package CFB
+ * @author emanuele
+ * @copyright 2011 emanuele, Simple Machines
+ * @license http://www.simplemachines.org/about/smf/license.php BSD
+ *
+ * @version 0.1.1
+ */
 
 function template_CandidateForBan()
 {
