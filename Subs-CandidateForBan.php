@@ -753,8 +753,6 @@ function ReportedBans2 ()
 					if (candidateForBan_checkExistingTriggerName($row[$what]))
 						continue;
 				}
-				$ban_info['add_new_trigger'] = !empty($ban_info['group_id']) ? 1 : null;
-				$ban_info['add_ban'] = empty($ban_info['group_id']) ? 1 : null;
 				$ban_info[$post_ban] = $row[$what];
 
 				candidateForBan_BanEdit($ban_info);
@@ -924,7 +922,7 @@ function candidateForBan_BanEdit($ban_info)
 	global $txt, $modSettings, $context, $ban_request, $scripturl, $smcFunc;
 
 	// Adding a ban trigger?
-	if (!empty($ban_info['add_new_trigger']))
+	if (!empty($ban_info['group_id']))
 	{
 		checkSession();
 
@@ -1021,11 +1019,10 @@ function candidateForBan_BanEdit($ban_info)
 		));
 	}
 	// Add a ban.
-	elseif (!empty($ban_info['add_ban']))
+	else
 	{
 		checkSession();
 
-		$addBan = !empty($ban_info['add_ban']);
 		if (empty($ban_info['ban_name']))
 			fatal_lang_error('ban_name_empty', false);
 
@@ -1121,7 +1118,6 @@ function candidateForBan_BanEdit($ban_info)
 					'member' => $bannedUser,
 				);
 			}
-
 			if (!empty($ban_info['ban_suggestion']['ips']) && is_array($ban_info['ban_suggestion']['ips']))
 			{
 				$ban_info['ban_suggestion']['ips'] = array_unique($ban_info['ban_suggestion']['ips']);
