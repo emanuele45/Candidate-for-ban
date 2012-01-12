@@ -689,25 +689,21 @@ function ReportedBans2 ()
 				case 'ban_names':
 					$what = 'member_name';
 					$post_ban = 'user';
-					$ban_info['ban_suggestion'][] = 'user';
 					$ban_info['bantype'] = 'user_ban';
 					break;
 				case 'ban_mails':
 					$what = 'email_address';
 					$post_ban = 'email';
-					$ban_info['ban_suggestion'][] = 'email';
 					$ban_info['bantype'] = 'email_ban';
 					break;
 				case 'ban_ips':
 					$what = 'member_ip';
 					$post_ban = 'ip';
-					$ban_info['ban_suggestion'][] = 'main_ip';
 					$ban_info['bantype'] = 'ip_ban';
 					break;
 				case 'ban_ips2':
 					$what = 'member_ip2';
 					$post_ban = 'ip';
-					$ban_info['ban_suggestion'][] = 'main_ip';
 					$ban_info['bantype'] = 'ip_ban';
 					break;
 				default:
@@ -1009,8 +1005,6 @@ function candidateForBan_BanEdit($ban_info)
 
 			$modlogInfo['member'] = $memberid;
 		}
-		else
-			fatal_lang_error('no_bantype_selected', false);
 
 		$smcFunc['db_insert']('',
 			'{db_prefix}ban_items',
@@ -1048,117 +1042,79 @@ function candidateForBan_BanEdit($ban_info)
 		$smcFunc['db_free_result']($request);
 
 		// Adding some ban triggers?
-		if (!empty($ban_info['ban_suggestion']) && is_array($ban_info['ban_suggestion']))
+		$ban_triggers = array();
+		$ban_logs = array();
+		if ($ban_info['bantype'] == 'ip_ban')
 		{
-			$ban_triggers = array();
-			$ban_logs = array();
-			if (in_array('main_ip', $ban_info['ban_suggestion']) && !empty($ban_info['ip']))
-			{
-				$ip_parts = candidateForBan_checkExistingTriggerIP($ban_info['ip']);
-				if (empty($ip_parts))
-					fatal_lang_error('invalid_ip', false);
+			$ip_parts = candidateForBan_checkExistingTriggerIP($ban_info['ip']);
+			if (empty($ip_parts))
+				fatal_lang_error('invalid_ip', false);
 
-				$ban_triggers[] = array(
-					$ip_parts[0]['low'],
-					$ip_parts[0]['high'],
-					$ip_parts[1]['low'],
-					$ip_parts[1]['high'],
-					$ip_parts[2]['low'],
-					$ip_parts[2]['high'],
-					$ip_parts[3]['low'],
-					$ip_parts[3]['high'],
-					'',
-					'',
-					0,
-				);
+			$ban_triggers[] = array(
+				$ip_parts[0]['low'],
+				$ip_parts[0]['high'],
+				$ip_parts[1]['low'],
+				$ip_parts[1]['high'],
+				$ip_parts[2]['low'],
+				$ip_parts[2]['high'],
+				$ip_parts[3]['low'],
+				$ip_parts[3]['high'],
+				'',
+				'',
+				0,
+			);
 
-				$ban_logs[] = array(
-					'ip_range' => $ban_info['ip'],
-				);
-			}
-			if (in_array('email', $ban_info['ban_suggestion']) && !empty($ban_info['email']))
-			{
-				if (preg_match('/[^\w.\-\+*@]/', $ban_info['email']) == 1)
-					fatal_lang_error('invalid_email', false);
-				$ban_info['email'] = strtolower(str_replace('*', '%', $ban_info['email']));
+			$ban_logs[] = array(
+				'ip_range' => $ban_info['ip'],
+			);
+		}
+		elseif ($ban_info['bantype'] == 'email_ban')
+		{
+			if (preg_match('/[^\w.\-\+*@]/', $ban_info['email']) == 1)
+				fatal_lang_error('invalid_email', false);
+			$ban_info['email'] = strtolower(str_replace('*', '%', $ban_info['email']));
 
-				$ban_triggers[] = array(
-					0, 0, 0, 0, 0, 0, 0, 0,
-					'',
-					substr($ban_info['email'], 0, 255),
-					0,
-				);
-				$ban_logs[] = array(
-					'email' => $ban_info['email'],
-				);
-			}
-			if (in_array('user', $ban_info['ban_suggestion']) && !empty($ban_info['user']))
-			{
-				// We got a username, let's find its ID.
-				// $ban_info['user'] comes from the database, let's trust it
-				$request = $smcFunc['db_query']('', '
-					SELECT id_member, (id_group = {int:admin_group} OR FIND_IN_SET({int:admin_group}, additional_groups) != 0) AS isAdmin
-					FROM {db_prefix}members
-					WHERE member_name = {string:username} OR real_name = {string:username}
-					LIMIT 1',
-					array(
-						'admin_group' => 1,
-						'username' => $ban_info['user'],
-					)
-				);
-				if ($smcFunc['db_num_rows']($request) == 0)
-					fatal_lang_error('invalid_username', false);
-				list ($bannedUser, $isAdmin) = $smcFunc['db_fetch_row']($request);
-				$smcFunc['db_free_result']($request);
+			$ban_triggers[] = array(
+				0, 0, 0, 0, 0, 0, 0, 0,
+				'',
+				substr($ban_info['email'], 0, 255),
+				0,
+			);
+			$ban_logs[] = array(
+				'email' => $ban_info['email'],
+			);
+		}
+		elseif ($ban_info['bantype'] == 'user_ban')
+		{
+			// We got a username, let's find its ID.
+			// $ban_info['user'] comes from the database, let's trust it
+			$request = $smcFunc['db_query']('', '
+				SELECT id_member, (id_group = {int:admin_group} OR FIND_IN_SET({int:admin_group}, additional_groups) != 0) AS isAdmin
+				FROM {db_prefix}members
+				WHERE member_name = {string:username} OR real_name = {string:username}
+				LIMIT 1',
+				array(
+					'admin_group' => 1,
+					'username' => $ban_info['user'],
+				)
+			);
+			if ($smcFunc['db_num_rows']($request) == 0)
+				fatal_lang_error('invalid_username', false);
+			list ($bannedUser, $isAdmin) = $smcFunc['db_fetch_row']($request);
+			$smcFunc['db_free_result']($request);
 
-				if ($isAdmin && $isAdmin != 'f')
-					fatal_lang_error('no_ban_admin', 'critical');
+			if ($isAdmin && $isAdmin != 'f')
+				fatal_lang_error('no_ban_admin', 'critical');
 
-				$ban_triggers[] = array(
-					0, 0, 0, 0, 0, 0, 0, 0,
-					'',
-					'',
-					(int) $bannedUser,
-				);
-				$ban_logs[] = array(
-					'member' => $bannedUser,
-				);
-			}
-			if (!empty($ban_info['ban_suggestion']['ips']) && is_array($ban_info['ban_suggestion']['ips']))
-			{
-				$ban_info['ban_suggestion']['ips'] = array_unique($ban_info['ban_suggestion']['ips']);
-
-				// Don't add the main IP again.
-				if (in_array('main_ip', $ban_info['ban_suggestion']))
-					$ban_info['ban_suggestion']['ips'] = array_diff($ban_info['ban_suggestion']['ips'], array($ban_info['ip']));
-
-				if (!empty($ban_info['ban_suggestion']['ips']))
-					foreach ($ban_info['ban_suggestion']['ips'] as $ip)
-					{
-						$ip_parts = ip2range($ip);
-
-						// They should be alright, but just to be sure...
-						if (count($ip_parts) != 4)
-							fatal_lang_error('invalid_ip', false);
-
-						$ban_triggers[] = array(
-							$ip_parts[0]['low'],
-							$ip_parts[0]['high'],
-							$ip_parts[1]['low'],
-							$ip_parts[1]['high'],
-							$ip_parts[2]['low'],
-							$ip_parts[2]['high'],
-							$ip_parts[3]['low'],
-							$ip_parts[3]['high'],
-							'',
-							'',
-							0,
-						);
-						$ban_logs[] = array(
-							'ip_range' => $ip,
-						);
-					}
-			}
+			$ban_triggers[] = array(
+				0, 0, 0, 0, 0, 0, 0, 0,
+				'',
+				'',
+				(int) $bannedUser,
+			);
+			$ban_logs[] = array(
+				'member' => $bannedUser,
+			);
 		}
 
 		// Yes yes, we're ready to add now.
