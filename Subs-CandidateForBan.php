@@ -66,8 +66,6 @@ function candidateForBan_add_admin_menu (&$admin_areas)
 
 function candidateForBan_settings (&$config_vars)
 {
-	global $txt;
-
 	loadLanguage('CandidateForBan');
 
 	$config_vars[] = array('text', 'reportForBan_ban_name');
@@ -588,7 +586,7 @@ function ReportedBans ()
 
 function ReportedBans2 ()
 {
-	global $modSettings, $smcFunc, $txt, $sourcedir, $user_info;
+	global $modSettings, $smcFunc, $sourcedir, $user_info;
 	checkSession('post');
 
 	loadLanguage('CandidateForBan');
@@ -599,6 +597,22 @@ function ReportedBans2 ()
 	// Were are we supposed to put all these bans??
 	$ban_name = !empty($_POST['ban_name']) ? $smcFunc['htmlspecialchars']($_POST['ban_name'], ENT_QUOTES) : (!empty($modSettings['reportForBan_ban_name']) ? $modSettings['reportForBan_ban_name'] : '');
 	$ban_reason = !empty($_POST['ban_reason']) ? $smcFunc['htmlspecialchars']($_POST['ban_reason'], ENT_QUOTES) : '';
+
+	if(empty($_POST['bans']))
+		fatal_lang_error('no_member_selected', false);
+	$id_members = array_unique($_POST['bans']);
+
+	// Clean the input.
+	foreach ($id_members as $key => $value)
+	{
+		$id_members[$key] = (int) $value;
+		// Don't ban yourself, idiot.
+		if ($value == $user_info['id'])
+			unset($id_members[$key]);
+	}
+
+	if (empty($_POST['ban_type']))
+		fatal_lang_error('no_bantype_selected', false);
 
 	$remove = false;
 	switch ($_POST['ban_type'])
@@ -634,29 +648,12 @@ function ReportedBans2 ()
 
 	if($remove)
 	{
-		candidatForBan_removeSuggestions();
+		candidatForBan_removeSuggestions(array_keys($id_members));
 		return;
 	}
 
 	if(empty($ban_name))
 		fatal_lang_error('reportedBan_error_name', false);
-	if(empty($ban_reason))
-		fatal_lang_error('reportedBan_error_reason', false);
-	if(empty($_POST['bans']))
-		fatal_lang_error('no_member_selected', false);
-
-	$id_members = array_unique($_POST['bans']);
-
-	// Clean the input.
-	foreach ($id_members as $key => $value)
-	{
-		$id_members[$key] = (int) $value;
-		// Don't ban yourself, idiot.
-		if ($value == $user_info['id'])
-			unset($id_members[$key]);
-	}
-
-	require_once($sourcedir . '/ManageBans.php');
 
 	$id_ban = $smcFunc['db_query']('', '
 		SELECT id_ban_group
@@ -672,6 +669,9 @@ function ReportedBans2 ()
 		$ban_info['group_id'] = 0;
 
 	$smcFunc['db_free_result']($id_ban);
+
+	if(empty($ban_reason) && empty($ban_info['group_id']))
+		fatal_lang_error('reportedBan_error_reason', false);
 
 	// Set up an array of bans
 	foreach ($id_members as $key => $value)
@@ -700,13 +700,13 @@ function ReportedBans2 ()
 					break;
 				case 'ban_ips':
 					$what = 'member_ip';
-					$post_ban = !empty($ban_info['group_id']) ? 'ip' : 'main_ip';
+					$post_ban = 'ip';
 					$ban_info['ban_suggestion'][] = 'main_ip';
 					$ban_info['bantype'] = 'ip_ban';
 					break;
 				case 'ban_ips2':
 					$what = 'member_ip2';
-					$post_ban = !empty($ban_info['group_id']) ? 'ip' : 'main_ip';
+					$post_ban = 'ip';
 					$ban_info['ban_suggestion'][] = 'main_ip';
 					$ban_info['bantype'] = 'ip_ban';
 					break;
@@ -734,7 +734,7 @@ function ReportedBans2 ()
 			$ban_info['cannot_login'] = !empty($ban_info['full_ban']) || empty($_POST['cannot_login']) ? '0' : '1';
 
 
-			foreach ($context['members_data'] as $key => $row)
+			while ($row = $smcFunc['db_fetch_assoc']($request))
 			{
 				if ($maction == 'ban_ips' || $maction == 'ban_ips2')
 				{
@@ -777,19 +777,28 @@ function ReportedBans2 ()
 			$remove = true;
 		}
 
+	// Register the last modified date.
+	updateSettings(array('banLastUpdated' => time()));
+
+	require_once($sourcedir . '/ManageBans.php');
+	// Update the member table to represent the new ban situation.
+	updateBanMembers();
+
 	//Cleanup the reports
 	if($remove)
-		candidatForBan_removeSuggestions();
+		candidatForBan_removeSuggestions(array_keys($id_members));
 	
 }
 
-function candidatForBan_removeSuggestions()
+function candidatForBan_removeSuggestions($to_remove = array())
 {
 	global $smcFunc;
 
-	$to_remove = array();
-	foreach($_POST['bans'] as $key => $val)
-		$to_remove[] = $key;
+	if (empty($to_remove))
+		return;
+
+	if (!is_array($to_remove))
+		$to_remove = array($to_remove);
 
 	$smcFunc['db_query']('', '
 		DELETE FROM {db_prefix}reported_for_ban
@@ -841,7 +850,7 @@ function candidateForBan_checkExistingTriggerIP($fullip = '')
 	if ($smcFunc['db_num_rows']($request) != 0)
 		$ret = false;
 	else
-		$ret = true;
+		$ret = $ip_array;
 	$smcFunc['db_free_result']($request);
 
 	return $ret;
@@ -959,10 +968,8 @@ function candidateForBan_BanEdit($ban_info)
 
 		if ($ban_info['bantype'] == 'ip_ban')
 		{
-			$ip = trim($_POST['ip']);
-			$ip_parts = ip2range($ip);
-			$ip_check = checkExistingTriggerIP($ip_parts, $ip);
-			if (!$ip_check)
+			$ip_check = candidateForBan_checkExistingTriggerIP($ban_info['ip']);
+			if (empty($ip_check))
 				fatal_lang_error('invalid_ip', false);
 			$values = array_merge($values, $ip_check);
 
@@ -1045,11 +1052,10 @@ function candidateForBan_BanEdit($ban_info)
 		{
 			$ban_triggers = array();
 			$ban_logs = array();
-			if (in_array('main_ip', $ban_info['ban_suggestion']) && !empty($ban_info['main_ip']))
+			if (in_array('main_ip', $ban_info['ban_suggestion']) && !empty($ban_info['ip']))
 			{
-				$ip = trim($ban_info['main_ip']);
-				$ip_parts = ip2range($ip);
-				if (!checkExistingTriggerIP($ip_parts, $ip))
+				$ip_parts = candidateForBan_checkExistingTriggerIP($ban_info['ip']);
+				if (empty($ip_parts))
 					fatal_lang_error('invalid_ip', false);
 
 				$ban_triggers[] = array(
@@ -1067,7 +1073,7 @@ function candidateForBan_BanEdit($ban_info)
 				);
 
 				$ban_logs[] = array(
-					'ip_range' => $ban_info['main_ip'],
+					'ip_range' => $ban_info['ip'],
 				);
 			}
 			if (in_array('email', $ban_info['ban_suggestion']) && !empty($ban_info['email']))
@@ -1124,7 +1130,7 @@ function candidateForBan_BanEdit($ban_info)
 
 				// Don't add the main IP again.
 				if (in_array('main_ip', $ban_info['ban_suggestion']))
-					$ban_info['ban_suggestion']['ips'] = array_diff($ban_info['ban_suggestion']['ips'], array($ban_info['main_ip']));
+					$ban_info['ban_suggestion']['ips'] = array_diff($ban_info['ban_suggestion']['ips'], array($ban_info['ip']));
 
 				if (!empty($ban_info['ban_suggestion']['ips']))
 					foreach ($ban_info['ban_suggestion']['ips'] as $ip)
