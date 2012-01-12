@@ -40,6 +40,7 @@ $txt['reportedBan_error_name'] = 'The ban name is missing.';
 $txt['reportedBan_error_reason'] = 'The ban reason is missing.';
 $txt['reportedBan_flood_report'] = 'You have already reported this user in the last hour.';
 $txt['reportedBan_duplicate_report'] = 'You have already reported this user for this reason.';
+$txt['reportedBan_impossible_insert_new_ban'] = 'Creation of new ban group failed for unknown reason.';
 
 $txt['scheduled_task_cfb_countAdmins'] = 'Count admins';
 $txt['scheduled_task_desc_cfb_countAdmins'] = 'Counts how many admins are set up on the forum. - Mod: Candidate for ban.';
