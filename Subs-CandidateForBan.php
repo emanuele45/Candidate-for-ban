@@ -29,9 +29,11 @@ function candidateForBan_add_permissions (&$permissionGroups, &$permissionList, 
 
 function candidateForBan_common_permissions ()
 {
-	global $context;
+	global $context $topic, $board;
 
-	$context['can_candidate_for_ban'] = allowedTo('report_for_ban');
+	// Action is empty... board is not empty... topic is not empty... Display!
+	if (empty($_REQUEST['action']) && !empty($board) && !empty($topic))
+		$context['can_candidate_for_ban'] = allowedTo('report_for_ban');
 }
 
 function candidateForBan_add_profile_menu (&$profile_areas)
@@ -1016,8 +1018,13 @@ function candidateForBan_InsertBanGroup($ban_info)
 			'new_ban_name' => $ban_info['ban_name'],
 		)
 	);
+
 	if ($smcFunc['db_num_rows']($request) == 1)
-		fatal_lang_error('ban_name_exists', false, array($ban_info['ban_name']));
+	{
+		list($id_ban) = $smcfunc['db_fetch_row']($request);
+		$smcFunc['db_free_result']($request);
+		return $id_ban;
+	}
 	$smcFunc['db_free_result']($request);
 
 	// Yes yes, we're ready to add now.
