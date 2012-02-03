@@ -610,6 +610,14 @@ function ReportedBans2 ()
 		// Don't ban yourself, idiot.
 		if ($value == $user_info['id'])
 			unset($id_members[$key]);
+		else
+			$members[] = (int) $value;
+	}
+
+	if($remove)
+	{
+		candidatForBan_removeSuggestions(array_keys($id_members));
+		return;
 	}
 
 	if (empty($_POST['ban_type']))
@@ -647,12 +655,6 @@ function ReportedBans2 ()
 			break;
 	}
 
-	if($remove)
-	{
-		candidatForBan_removeSuggestions(array_keys($id_members));
-		return;
-	}
-
 	if(empty($ban_name))
 		fatal_lang_error('reportedBan_error_name', false);
 
@@ -684,12 +686,6 @@ function ReportedBans2 ()
 
 	if (empty($ban_info['group_id']))
 		$ban_info['group_id'] = candidateForBan_InsertBanGroup($ban_info);
-
-	// Set up an array of bans
-	foreach ($id_members as $key => $value)
-		if ($value != $user_info['id'])
-			// Don't ban yourself, idiot.
-			$members[] = (int) $value;
 
 	if (empty($members) || empty($mactions))
 		return;
