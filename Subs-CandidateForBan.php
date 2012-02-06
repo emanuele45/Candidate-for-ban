@@ -29,7 +29,7 @@ function candidateForBan_add_permissions (&$permissionGroups, &$permissionList, 
 
 function candidateForBan_common_permissions ()
 {
-	global $context $topic, $board;
+	global $context, $topic, $board;
 
 	// Action is empty... board is not empty... topic is not empty... Display!
 	if (empty($_REQUEST['action']) && !empty($board) && !empty($topic))
@@ -1039,7 +1039,7 @@ function candidateForBan_InsertBanGroup ($ban_info)
 	$ban_info['group_id'] = $smcFunc['db_insert_id']('{db_prefix}ban_groups', 'id_ban_group');
 
 	if (empty($ban_info['group_id']))
-		fatal_lang_error('reportedBan_impossible_insert_new_ban', false)
+		fatal_lang_error('reportedBan_impossible_insert_new_ban', false);
 
 	return $ban_info['group_id'];
 }

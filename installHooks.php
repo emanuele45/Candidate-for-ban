@@ -39,7 +39,7 @@ else
 }
 
 $integration_function('integrate_pre_include',  '$sourcedir/Subs-CandidateForBan.php');
-$integration_function('integrate_load_theme ',  'candidateForBan_common_permissions');
+$integration_function('integrate_load_theme',  'candidateForBan_common_permissions');
 $integration_function('integrate_load_permissions',  'candidateForBan_add_permissions');
 $integration_function('integrate_profile_areas',  'candidateForBan_add_profile_menu');
 $integration_function('integrate_admin_areas',  'candidateForBan_add_admin_menu');
