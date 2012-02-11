@@ -614,12 +614,6 @@ function ReportedBans2 ()
 			$members[] = (int) $value;
 	}
 
-	if ($remove)
-	{
-		candidatForBan_removeSuggestions(array_keys($id_members));
-		return;
-	}
-
 	if (empty($_POST['ban_type']))
 		fatal_lang_error('no_bantype_selected', false);
 
@@ -653,6 +647,12 @@ function ReportedBans2 ()
 		default:
 			$mactions = null;
 			break;
+	}
+
+	if ($remove)
+	{
+		candidatForBan_removeSuggestions(array_keys($id_members));
+		return;
 	}
 
 	if (empty($ban_name))
