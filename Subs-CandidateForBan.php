@@ -601,15 +601,15 @@ function ReportedBans2 ()
 
 	if (empty($_POST['bans']))
 		fatal_lang_error('no_member_selected', false);
-	$id_members = array_unique($_POST['bans']);
+	$id_bans = $_POST['bans'];
 
 	// Clean the input.
-	foreach ($id_members as $key => $value)
+	foreach ($id_bans as $key => $value)
 	{
-		$id_members[$key] = (int) $value;
+		$id_bans[$key] = (int) $value;
 		// Don't ban yourself, idiot.
 		if ($value == $user_info['id'])
-			unset($id_members[$key]);
+			unset($id_bans[$key]);
 		else
 			$members[] = (int) $value;
 	}
@@ -651,7 +651,7 @@ function ReportedBans2 ()
 
 	if ($remove)
 	{
-		candidatForBan_removeSuggestions(array_keys($id_members));
+		candidatForBan_removeSuggestions(array_keys($id_bans));
 		return;
 	}
 
@@ -722,7 +722,7 @@ function ReportedBans2 ()
 			FROM {db_prefix}members
 			WHERE id_member IN ({array_int:id_members})
 				AND id_group != {int:admin_group}
-				AND FIND_IN_SET ({int:admin_group}, additional_groups) == 0',
+				AND FIND_IN_SET ({int:admin_group}, additional_groups) = 0',
 			array(
 				'id_members' => $members,
 				'admin_group' => 1,
@@ -783,7 +783,7 @@ function ReportedBans2 ()
 
 	//Cleanup the reports
 	if ($remove)
-		candidatForBan_removeSuggestions(array_keys($id_members));
+		candidatForBan_removeSuggestions(array_keys($id_bans));
 	
 }
 
@@ -867,20 +867,17 @@ function candidateForBan_checkExistingTriggerMail ($address = '')
 	if (!empty($address) && $user_info['email'] == $address)
 		return false;
 
-	if (empty($bannedEmails))
+	if (empty($bannedEmails) && !in_array($address, $bannedEmails))
 	{
-		$addresses = array();
-		foreach ($context['members_data'] as $key => $row)
-			$addresses[] = $row['email_address'];
-
 		$request = $smcFunc['db_query']('', '
-			SELECT bg.id_ban_group, bg.name, email_address
+			SELECT email_address
 			FROM {db_prefix}ban_groups AS bg
 			INNER JOIN {db_prefix}ban_items AS bi ON
 				(bi.id_ban_group = bg.id_ban_group)
-				AND email_address IN ({array_string:address})',
+				AND email_address = {string:address}
+			LIMIT 1',
 			array(
-				'address' => $addresses,
+				'address' => $address,
 			)
 		);
 		while ($row = $smcFunc['db_fetch_assoc']($request))
@@ -904,18 +901,14 @@ function candidateForBan_checkExistingTriggerName ($member_id = '')
 
 	if (empty($bannedIDs))
 	{
-		$names = array();
-		foreach ($context['members_data'] as $key => $row)
-			$names[] = $row['id_member'];
-
 		$request = $smcFunc['db_query']('', '
 			SELECT bg.id_ban_group, bg.name, id_member
 			FROM {db_prefix}ban_groups AS bg
 			INNER JOIN {db_prefix}ban_items AS bi ON
 				(bi.id_ban_group = bg.id_ban_group)
-				AND id_member IN ({array_int:member_id})',
+				AND id_member = {int:member_id}',
 			array(
-				'member_id' => $names,
+				'member_id' => $member_id,
 			)
 		);
 		while ($row = $smcFunc['db_fetch_assoc']($request))
@@ -988,7 +981,7 @@ function candidateForBan_AddTriggers ($group_id = 0, $triggers = array(), $logs 
 	// Log the addion of the ban entries into the moderation log.
 	foreach ($logs as $log)
 		logAction('ban', array(
-			$logCorrel[$log['item']] => $log['value'],
+			$logCorrel[$log['bantype']] => $log['value'],
 			'new' => 1,
 			'type' => $log['bantype'],
 		));
